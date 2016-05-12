@@ -1,5 +1,9 @@
-# stuff
+# stuff - a collection of small projects that dont justify their own repo
 
+
+## ws2812_spi.c
+Ever wanted to directly drive a WS2812b LED strip without using PWM or external dongles or MCUs ?
+This is an example of how to (ab)use the SPI device to do it!
 
 ## ESP-udp-neo.ino
 This is arduino/esp8266 project to catch UDP packets and then light up a ws2812 based strip of LEDs.
