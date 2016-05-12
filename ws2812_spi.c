@@ -79,6 +79,9 @@ uint8_t bitpair_to_byte[] = {
 	0b11001100,
 };
 
+	uint8_t nled_data[] = {
+		0x55, 0xaa, 0x55,
+	};
 
 // sample LED rainbow data Green, Red, Blue
 	uint8_t led_data[] = {
@@ -111,7 +114,7 @@ static void make_spi_buffer(int offset)
 	uint8_t led_colour=0;
 	unsigned spi_ptr=0;
 	unsigned led_num=0;
-	int dimness = 16;
+	int dimness = 1;
 
 	for (led_num=0; led_num< num_leds ; led_num++ ) {
 		for (led_colour=0; led_colour<3; led_colour++ ){
@@ -147,16 +150,6 @@ static void transfer(int fd)
 		pabort("can't send spi message");
 }
 
-void mysleep(double dly){
-    /* save start clock tick */
-    const clock_t start = clock();
-    clock_t current;
-    do{
-        /* get current clock tick */
-        current = clock();
-        /* break loop when the requested number of seconds have elapsed */
-    }while((double)(current-start)/CLOCKS_PER_SEC < dly);
-}
 static void print_usage(const char *prog)
 {
 	printf("Usage: %s [-DsHON]\n", prog);
@@ -263,7 +256,7 @@ int main(int argc, char *argv[])
 		for (i = 0 ; i<ARRAY_SIZE(led_data)/3; i++) {
 			make_spi_buffer(i);
 			transfer(fd);
-			mysleep(0.060);
+			usleep(60000);
 		}
 	}
 	close(fd);
