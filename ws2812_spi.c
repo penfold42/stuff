@@ -32,8 +32,9 @@
  * It's simpler just to send 3 bytes of 0.
  *
  * As of 12/5/2016 I've found that I really need a speed 3,800,000
- * I havent looked into why this doesnt match my calculations
- * If the speed is too low, the strip will be full white
+ * This is because my PI was undervolt and it was automatically dropping core clock speed
+
+ * If the speed is too low, the strip will be white or flickering white
  * If the speed is too high, the strip will be black or flickering black
  *
  *
@@ -64,7 +65,7 @@ static void pabort(const char *s)
 static const char *device = "/dev/spidev0.0";
 static uint8_t mode;
 static uint8_t bits = 8;
-static uint32_t speed = 3800000;
+static uint32_t speed = 2857142;	// = 350 nS
 static uint16_t delay;
 
 // each pair of WS2812 bits is sent as 1 spi byte
@@ -114,7 +115,7 @@ static void make_spi_buffer(int offset)
 	uint8_t led_colour=0;
 	unsigned spi_ptr=0;
 	unsigned led_num=0;
-	int dimness = 1;
+	int dimness = 8;
 
 	for (led_num=0; led_num< num_leds ; led_num++ ) {
 		for (led_colour=0; led_colour<3; led_colour++ ){
