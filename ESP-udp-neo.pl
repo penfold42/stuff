@@ -454,9 +454,9 @@ sub rings_effect() {
 			usleep($sleep_speed);	
 		}
 
-		fill_range(0,61,0,0,);
-		send_ledarray();
-		sleep(1);
+#		fill_range(0,61,0,0,0);
+#		send_ledarray();
+#		sleep(1);
 	}
 }
 
@@ -483,22 +483,6 @@ sub fill_ring {
 	fill_range($start, $end, $red, $green, $blue);
 }
 
-sub NOrings_effect() {
-#1, 8, 12, 16, 24
-
-	$bright=$bright/16;
-	$bright=1/16;
-	while (1) {
-		for ($led = 0; $led<5; $led++) {
-print "led $led\n";
-			($r,$g,$b) = @{ $rainbow_colours[$led%$rainbow_colours_sz] } [0..2];
-			($start,$end) = @{ $rings[$led] } [0..1];
-			fill_range($start, $end, $r*$bright, $g*$bright, $b*$bright);
-		}
-		send_ledarray();
-		usleep($sleep_speed);	
-	}
-}
 
 sub send_ledarray() {
 	if ($protocol =~ /^b/) {
