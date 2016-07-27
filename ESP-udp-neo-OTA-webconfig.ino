@@ -148,7 +148,7 @@ void setup() {
   Serial.print("FlashchipID: ");
   Serial.println(ESP.getFlashChipId(), HEX);
 
-  wifiManager.resetSettings();
+//  wifiManager.resetSettings();
   
   setup_wifimanager();
 //  wifi_connect(); // old setup routine pre wifimanager
