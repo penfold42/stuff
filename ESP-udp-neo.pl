@@ -27,6 +27,8 @@ $marker_effect = "none";
 # flush after every write
 $| = 1;
 
+$effect_brightness = 128;
+
 
 $protocol = "binary";
 $port = "2391";
@@ -142,14 +144,16 @@ sub sinus {
 
 
 	while (1) {
-		for ($i=0; $i < $numleds*$offset; $i+=$step) {
+#		for ($i=0; $i < $numleds*$offset; $i+=$step) {
+		for ($i+=$step) {
 			$angle = $i;
 #print "angle is $angle\n";
 			for ($led=0; $led<$numleds; $led++) {
 				$bright=sine_upshift($angle+$offset*$led);
 #				$bright=sine_zeroclamp($angle+$offset*$led);
 #				$bright=sine_180clamp($angle-$offset*$led);
-$bright=$bright/16;
+
+#$bright=$bright/16;
 				($r,$g,$b) = @{ $rainbow_colours[$led%$rainbow_colours_sz] } [0..2];
 				$ledarray[$led]->[0] = $r*$bright;
 				$ledarray[$led]->[1] = $g*$bright;
@@ -292,13 +296,12 @@ sub clock {
 
 
 sub phasor {
-	$brightness = 30;
 	while (1) {
 		for ($i=0; $i<3600000; $i+=3) {
 			clear_ledarray();
-			plot_hand(($i/2)%360, 90, $brightness, 255,0,0, "gaussdot01");
-			plot_hand(($i/3)%360, 90, $brightness, 0,255,0, "gaussdot20");
-#			plot_hand(359-($i/5)%360, 10, $brightness, 0,0,255, "negexp");
+			plot_hand(($i/2)%360, 90, $effect_brightness, 255,0,0, "gaussdot01");
+			plot_hand(($i/3)%360, 90, $effect_brightness, 0,255,0, "gaussdot20");
+#			plot_hand(359-($i/5)%360, 10, $effect_brightness, 0,0,255, "negexp");
 			send_ledarray();
 			usleep($sleep_speed);	
 		}
@@ -365,7 +368,7 @@ sub plot_hand() {
 
 sub rainbow {
 	$s=1; # so S=1 makes the purest color (no white)
-	$v=0.03; # Brightness V also ranges from 0 to 1, where 0 is the black.
+	$v=$effect_brightness/255 ; # Brightness V also ranges from 0 to 1, where 0 is the black.
 	$offset=30;
 	$step = 1;
 	while (1) {
@@ -440,7 +443,7 @@ sub fill_range {
 
 sub rings_effect() {
 	$s=1; # so S=1 makes the purest color (no white)
-	$v=0.03; # Brightness V also ranges from 0 to 1, where 0 is the black.
+	$v=$effect_brightness/255; # Brightness V also ranges from 0 to 1, where 0 is the black.
 	$offset=30;
 	$step = 1;
 	while (1) {
