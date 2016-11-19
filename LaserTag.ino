@@ -3,6 +3,9 @@
  *  Laser on pin 3
  *  IR sensor on pin 2
  *  trigger switch on pin 4 (5 ground)
+
+https://github.com/cyborg5/IRLib2/
+
  */
 //Decoded Sony(2): Value:52E9 Adrs:0 (15 bits) RED
 //Decoded Sony(2): Value:32E9 Adrs:0 (15 bits) GREEN
@@ -42,6 +45,7 @@ HslColor yellow(0.16, 1, brite);
 HslColor green(0.33, 1, brite );
 HslColor blue(0.66,  1, brite);
 HslColor white(0, 0, brite);
+HslColor white3(0, 0, 3*brite);
 HslColor black(0);
 HslColor currentColor = HslColor();
 float temp_hue;
@@ -52,8 +56,17 @@ void set_colour(HslColor blah) {
   strip.Show();  
 }
 
-void setup() {
+char last_button;
+char this_button;
 
+//char ser;
+int32_t code;
+int len;
+int down_count;
+signed long last_button_millis;
+signed long last_led_millis;
+
+void setup() {
   pinMode(5,OUTPUT);    // switch ground
   digitalWrite(5,LOW);
   pinMode(4,INPUT);     // switch input
@@ -64,39 +77,55 @@ void setup() {
   set_colour(red);
 
   Serial.begin(115200);
-  delay(2000); while (!Serial); //delay for Leonardo
+//  delay(2000); while (!Serial); //delay for Leonardo
 
-  set_colour(green);
-
+  set_colour(green); 
+  last_led_millis = millis()+1000;
   myReceiver.enableIRIn(); // Start the receiver
   Serial.println(F("Ready to receive IR signals"));
 }
 
-char last_button;
-char this_button;
+void do_led() {
+  // set the led to a rainbow colour based on score
+  if ( signed(millis() - last_led_millis) > 100 ) {
+//Serial.print("  diff: ");Serial.print(signed(millis() - last_led_millis));
+//Serial.print("  millis: ");Serial.print(millis());
+//Serial.print("  last_led_millis: ");Serial.println(last_led_millis);
+    last_led_millis = millis();
+    temp_hue = float(hit_count%60)/60;
+    set_colour(HslColor(temp_hue, 1, brite));
+  }
+}
 
-char ser;
-int32_t code;
-int len;
-unsigned long last_millis;
+void send_fire() {
+  down_count = 0;
+  code = 0x290;  len=12; // mute
+  mySender.send(SONY, code, len, 36);
+  myReceiver.enableIRIn();      //Restart receiver       
+}
 
 void do_button() {
-  if ( (millis() - last_millis) > 100 ) {
-    last_millis = millis();
+  if ( signed(millis() - last_button_millis) > 10 ) {
+    last_button_millis = millis();
     this_button = digitalRead(4);
-    if ((this_button == 0) && (last_button == 1)) {
-      code = 0x290;  len=12; // mute
-      mySender.send(SONY, code, len);
-      myReceiver.enableIRIn();      //Restart receiver      
+    
+    if (this_button == 0) {    // button is pushed
+      if (last_button == 1) {   // button has just been pushed
+        send_fire();
+      } else {  // button was held down
+        if (down_count++ > 10) {
+          send_fire();
+        }
+      }
     }
     last_button = this_button;
   }
 }
 
 
-void do_transmit() {
+void do_serial() {
   if (Serial.available()) {
-    ser = Serial.read();
+    char ser = Serial.read();
     code = -1;
     
     switch (ser) {
@@ -119,7 +148,7 @@ void do_transmit() {
         break;
     }
     if (code >= 0) {
-      mySender.send(SONY, code, len);
+      mySender.send(SONY, code, len, 36);
       myReceiver.enableIRIn();      //Restart receiver
       Serial.print("key=");      Serial.print(ser);
       Serial.print(" code=");    Serial.println(code,HEX);
@@ -152,8 +181,8 @@ void do_receive() {
         case 0x290:
           Serial.println("got mute.");
           hit_count+=1;
-          temp_hue = float(hit_count%60)/60;
-          set_colour(HslColor(temp_hue, 1, brite));
+          last_led_millis = millis();   // reset led update counter
+          set_colour(white3);
           Serial.print("hit_count: ");  Serial.println(hit_count);
           Serial.print("hue: ");  Serial.println(temp_hue);
         break;
@@ -167,6 +196,7 @@ void do_receive() {
 void loop() {
   do_button();
   do_receive();
-  do_transmit();
+  do_serial();
+  do_led();
 }
 
