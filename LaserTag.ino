@@ -23,7 +23,7 @@ NeoPixelBus<NeoGrbFeature,Neo800KbpsMethod> strip(PixelCount, PixelPin);
 #include <IRLibSendBase.h>    // First include the send base
 
 #include <IRLib_P02_Sony.h>  // to actually use. The lowest numbered
-#include <IRLib_P11_RCMM.h>
+//#include <IRLib_P11_RCMM.h>
 #include <IRLibCombo.h>     // After all protocols, include this
 // All of the above automatically creates a universal decoder
 // class called "IRdecode" containing only the protocols you want.
@@ -35,8 +35,17 @@ IRsend mySender;
 #include <IRLibRecv.h> 
 IRrecv myReceiver(2);  //pin number for the receiver
 
+// OLED display https://github.com/greiman/SSD1306Ascii
+#include <SSD1306Ascii.h>
+#include <SSD1306AsciiAvrI2c.h>
+
+// 0X3C+SA0 - 0x3C or 0x3D
+#define I2C_ADDRESS 0x3C
+
+SSD1306AsciiAvrI2c oled;
 
 int hit_count = 0;
+int fire_count = 0;
 
 float brite = 0.05f;
 
@@ -65,6 +74,7 @@ int len;
 int down_count;
 signed long last_button_millis;
 signed long last_led_millis;
+signed long last_lcd_millis;
 
 void setup() {
   pinMode(5,OUTPUT);    // switch ground
@@ -72,17 +82,48 @@ void setup() {
   pinMode(4,INPUT);     // switch input
   digitalWrite(4,HIGH); // with pullup
 
-  strip.Begin();
-
-  set_colour(red);
-
   Serial.begin(115200);
 //  delay(2000); while (!Serial); //delay for Leonardo
+
+  strip.Begin();
+
+Serial.print("doing setup_display\n");
+  setup_display();
+  
+  set_colour(red);
+
 
   set_colour(green); 
   last_led_millis = millis()+1000;
   myReceiver.enableIRIn(); // Start the receiver
   Serial.println(F("Ready to receive IR signals"));
+}
+
+void setup_display() {
+  pinMode(26,OUTPUT);
+  digitalWrite(26,HIGH);
+  oled.begin(&Adafruit128x64, I2C_ADDRESS);
+//  oled.setFont(Adafruit5x7);  
+  oled.setFont(Cooper26);
+
+  oled.clear();  
+  oled.println("Bang Bang!");
+  oled.println("LaserTag");
+
+}
+
+void update_display() {
+  oled.clear();  
+  oled.print("Shots "); oled.println(fire_count);
+  oled.print("Hits "); oled.println(hit_count);
+  last_lcd_millis = millis();   // reset led update counter
+
+}
+
+void blank_display() {
+  if ( signed(millis() - last_lcd_millis) > 2000 ) {
+    oled.clear();
+  }
 }
 
 void do_led() {
@@ -102,6 +143,8 @@ void send_fire() {
   code = 0x290;  len=12; // mute
   mySender.send(SONY, code, len, 36);
   myReceiver.enableIRIn();      //Restart receiver       
+  fire_count++;
+  update_display();
 }
 
 void do_button() {
@@ -179,12 +222,13 @@ void do_receive() {
           set_colour(blue);
         break;
         case 0x290:
-          Serial.println("got mute.");
+          Serial.println(F("got mute."));
           hit_count+=1;
           last_led_millis = millis();   // reset led update counter
           set_colour(white3);
-          Serial.print("hit_count: ");  Serial.println(hit_count);
-          Serial.print("hue: ");  Serial.println(temp_hue);
+          update_display();
+//          Serial.print(F("hit_count: "));  Serial.println(hit_count);
+//          Serial.print(F("hue: "));  Serial.println(temp_hue);
         break;
         default:
           myDecoder.dumpResults(false);  //Now print results. Use false for less detail
@@ -198,5 +242,6 @@ void loop() {
   do_receive();
   do_serial();
   do_led();
+  blank_display();
 }
 
