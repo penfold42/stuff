@@ -23,29 +23,34 @@ NeoPixelBus<NeoGrbFeature,Neo800KbpsMethod> strip(PixelCount, PixelPin);
 #include <IRLibSendBase.h>    // First include the send base
 
 #include <IRLib_P02_Sony.h>  // to actually use. The lowest numbered
-//#include <IRLib_P11_RCMM.h>
+#include <IRLib_P11_RCMM.h>
 #include <IRLibCombo.h>     // After all protocols, include this
 // All of the above automatically creates a universal decoder
 // class called "IRdecode" containing only the protocols you want.
 // Now declare an instance of that decoder.
 IRdecode myDecoder;
 IRsend mySender;
-
 // Include a receiver either this or IRLibRecvPCI or IRLibRecvLoop
-#include <IRLibRecv.h> 
-IRrecv myReceiver(2);  //pin number for the receiver
+#include <IRLibRecvPCI.h> 
+IRrecvPCI myReceiver(2);  //pin number for the receiver
+
+#define carrier 36  // 36 kHz IR Carrier frequency
 
 // OLED display https://github.com/greiman/SSD1306Ascii
 #include <SSD1306Ascii.h>
-#include <SSD1306AsciiAvrI2c.h>
+//#include <SSD1306AsciiAvrI2c.h>
+#include <SSD1306AsciiWire.h>
 
 // 0X3C+SA0 - 0x3C or 0x3D
-#define I2C_ADDRESS 0x3C
+#define OLED_I2C_ADDRESS 0x3C
 
-SSD1306AsciiAvrI2c oled;
+//SSD1306AsciiAvrI2c oled;
+SSD1306AsciiWire oled;
 
-int hit_count = 0;
-int fire_count = 0;
+byte got_oled = false;  // was the oled display detected?
+
+int hit_count = 0;      // how many times have i been hit
+int fire_count = 0;     // how many times did it hit fire
 
 float brite = 0.05f;
 
@@ -69,8 +74,10 @@ char last_button;
 char this_button;
 
 //char ser;
+uint8_t proto;
 int32_t code;
 int len;
+
 int down_count;
 signed long last_button_millis;
 signed long last_led_millis;
@@ -87,12 +94,10 @@ void setup() {
 
   strip.Begin();
 
-Serial.print("doing setup_display\n");
-  setup_display();
-  
   set_colour(red);
 
-
+  setup_display();
+  
   set_colour(green); 
   last_led_millis = millis()+1000;
   myReceiver.enableIRIn(); // Start the receiver
@@ -100,29 +105,44 @@ Serial.print("doing setup_display\n");
 }
 
 void setup_display() {
-  pinMode(26,OUTPUT);
-  digitalWrite(26,HIGH);
-  oled.begin(&Adafruit128x64, I2C_ADDRESS);
-//  oled.setFont(Adafruit5x7);  
-  oled.setFont(Cooper26);
+  Serial.print("setup_display\n");
+  // Use A3/gpio17 as power
+  pinMode(17,OUTPUT);
+  digitalWrite(17,HIGH);
 
-  oled.clear();  
-  oled.println("Bang Bang!");
-  oled.println("LaserTag");
-
+  Wire.beginTransmission(OLED_I2C_ADDRESS);
+  byte error = Wire.endTransmission();
+  if (error == 0) {
+    got_oled = true;
+    Serial.print(F("Found display at address: ")); Serial.println(OLED_I2C_ADDRESS,HEX);
+    
+    oled.begin(&Adafruit128x64, OLED_I2C_ADDRESS);
+  //  oled.setFont(Adafruit5x7);  
+    oled.setFont(Cooper26);
+  
+    oled.clear();  
+    oled.println("Bang Bang!");
+    oled.println("LaserTag");
+  } else {
+    got_oled = false;
+    Serial.print(F("NO display at address: ")); Serial.println(OLED_I2C_ADDRESS,HEX);
+  }
 }
 
 void update_display() {
-  oled.clear();  
-  oled.print("Shots "); oled.println(fire_count);
-  oled.print("Hits "); oled.println(hit_count);
-  last_lcd_millis = millis();   // reset led update counter
-
+  if (got_oled) {
+    oled.clear();  
+    oled.print("Shots "); oled.println(fire_count);
+    oled.print("Hits "); oled.println(hit_count);
+    last_lcd_millis = millis();   // reset led update counter
+  }
 }
 
 void blank_display() {
-  if ( signed(millis() - last_lcd_millis) > 2000 ) {
-    oled.clear();
+  if (got_oled) {
+    if ( signed(millis() - last_lcd_millis) > 2000 ) {
+      oled.clear();
+    }
   }
 }
 
@@ -140,8 +160,8 @@ void do_led() {
 
 void send_fire() {
   down_count = 0;
-  code = 0x290;  len=12; // mute
-  mySender.send(SONY, code, len, 36);
+  mySender.send(SONY, 0x290,12, carrier);    // mute
+  
   myReceiver.enableIRIn();      //Restart receiver       
   fire_count++;
   update_display();
@@ -173,25 +193,25 @@ void do_serial() {
     
     switch (ser) {
       case 'r':
-        code = 0x52E9;  len=15;
+        proto = SONY; code = 0x52E9;  len=15;
         break;
       case 'g':
-        code = 0x32E9;  len=15;
+        proto = SONY; code = 0x32E9;  len=15;
         break;
       case 'b':
-        code = 0x72E9;  len=15;
+        proto = SONY; code = 0x72E9;  len=15;
         break;
       case 'y':
-        code = 0x12E9;  len=15;
+        proto = SONY; code = 0x12E9;  len=15;
         break;
       case 'm':
-        code = 0x290;  len=12; // mute
+        proto = SONY; code = 0x290;  len=12; // mute
         break;
       default:
         break;
     }
     if (code >= 0) {
-      mySender.send(SONY, code, len, 36);
+      mySender.send(proto, code, len, carrier);
       myReceiver.enableIRIn();      //Restart receiver
       Serial.print("key=");      Serial.print(ser);
       Serial.print(" code=");    Serial.println(code,HEX);
