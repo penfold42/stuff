@@ -160,7 +160,8 @@ void do_led() {
 
 void send_fire() {
   down_count = 0;
-  mySender.send(SONY, 0x290,12, carrier);    // mute
+//  mySender.send(SONY, 0x290,12, carrier);    // mute
+  mySender.send(RCMM, 0x21a0260d,32, carrier);    // mute
   
   myReceiver.enableIRIn();      //Restart receiver       
   fire_count++;
@@ -187,6 +188,7 @@ void do_button() {
 
 
 void do_serial() {
+#ifdef DO_SERIAL
   if (Serial.available()) {
     char ser = Serial.read();
     code = -1;
@@ -217,31 +219,32 @@ void do_serial() {
       Serial.print(" code=");    Serial.println(code,HEX);
     }
   }  
+#endif
 }
 
 void do_receive() {
   //Continue looping until you get a complete signal received
   if (myReceiver.getResults()) { 
     myDecoder.decode();           //Decode it
-    if (myDecoder.protocolNum == SONY) {
+    if (myDecoder.protocolNum == RCMM) {
       switch (myDecoder.value) {
-        case 0x52E9:
+        case 0x21a0266d:
           Serial.println("got red.");
           set_colour(red);
         break;
-        case 0x32E9:
+        case 0x21a0266e:
           Serial.println("got green.");
           set_colour(green);
         break;
-        case 0x72E9:
+        case 0x21a0266f:
           Serial.println("got yellow.");
           set_colour(yellow);
         break;
-        case 0x12E9:
+        case 0x21a02670:
           Serial.println("got blue.");
           set_colour(blue);
         break;
-        case 0x290:
+        case 0x21a0260d:
           Serial.println(F("got mute."));
           hit_count+=1;
           last_led_millis = millis();   // reset led update counter
