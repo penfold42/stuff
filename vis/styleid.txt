@@ -1,0 +1,1 @@
+<style id="myStyle" type="text/css">
