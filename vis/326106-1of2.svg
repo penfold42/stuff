@@ -83,22 +83,22 @@
 	.CIAS{fill:none;stroke:#2C52DB;stroke-width:5;stroke-miterlimit:10;}
 	.VA7{fill:none;stroke:#035E82;stroke-width:5;stroke-miterlimit:10;}
 	.VA6{fill:none;stroke:#0DF7A3;stroke-width:5;stroke-miterlimit:10;}
-	.U19{fill:#FF00FF;fill-opacity:0.27;}
-	.U12{fill:#FF00FF;fill-opacity:0.27;}
-	.U26{fill:#FF00FF;fill-opacity:0.27;}
-	.U6{fill:#FF00FF;fill-opacity:0.27;}
-	.U3{fill:#FF00FF;fill-opacity:0.27;}
-	.U4{fill:#FF00FF;fill-opacity:0.27;}
-	.U5{fill:#FF00FF;fill-opacity:0.27;}
-	.U17{fill:#FF00FF;fill-opacity:0.27;}
-	.U18{fill:#FF00FF;fill-opacity:0.27;}
-	.U14{fill:#FF00FF;fill-opacity:0.27;}
+	.U19{fill:#00FF00;fill-opacity:0.27;}
+	.U12{fill:#00FF00;fill-opacity:0.27;}
+	.U26{fill:#00FF00;fill-opacity:0.27;}
+	.U6{fill:#00FF00;fill-opacity:0.27;}
+	.U3{fill:#00FF00;fill-opacity:0.27;}
+	.U4{fill:#00FF00;fill-opacity:0.27;}
+	.U5{fill:#00FF00;fill-opacity:0.27;}
+	.U17{fill:#00FF00;fill-opacity:0.27;}
+	.U18{fill:#00FF00;fill-opacity:0.27;}
+	.U14{fill:#00FF00;fill-opacity:0.27;}
 	.nCOLORRAM{fill:none;stroke:#F9832B;stroke-width:5;stroke-miterlimit:10;}
-	.U15a{fill:#FF00FF;fill-opacity:0.27;}
-	.U15b{fill:#FF00FF;fill-opacity:0.27;}
-	.U13{fill:#FF00FF;fill-opacity:0.27;}
-	.U25{fill:#FF00FF;fill-opacity:0.27;}
-	.U16{fill:#FF00FF;fill-opacity:0.27;}
+	.U15a{fill:#00FF00;fill-opacity:0.27;}
+	.U15b{fill:#00FF00;fill-opacity:0.27;}
+	.U13{fill:#00FF00;fill-opacity:0.27;}
+	.U25{fill:#00FF00;fill-opacity:0.27;}
+	.U16{fill:#00FF00;fill-opacity:0.27;}
 </style>
 <g id="base_background">
 </g>

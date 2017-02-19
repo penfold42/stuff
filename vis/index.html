@@ -1,9 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 <style title="mainPage">
 	body {background-color: #352879;}
 	h1   {color: blue;}
+
+	.tape_controls table tr td {
+		background-color: #6C5EB5;
+		border: 1px solid black;
+		vertical-align: middle;
+		horizontal-align: center;
+	}
+	.tape_controls table tr td input {
+		margin:auto;
+		display:block;
+		background-color: white;
+		text-align: center;
+		vertical-align: middle;
+		horizontal-align: center;
+	}
 
 	#controls {
 		margin: 2px 0;
@@ -13,7 +29,7 @@
 		position:absolute; top:5px; left:82%;
 		font-size: 20px;
 		font-weight:  bold;
-    font-family: "Lucida Console", Monaco, monospace;
+		font-family: "Lucida Console", Monaco, monospace;
 	}
 
 	section {
@@ -32,7 +48,7 @@
 		border: 0px dashed #0f0;
 		position: relative;
 		transform-origin: 000 000 !important;
-                transform: scale(0.22) translate(-280px, -300px);
+                transform: scale(0.22) translate(-450px, -300px);
 	}
 
 	.parent .overlay {
@@ -43,6 +59,14 @@
 		left: 0;
 	}
 
+	.parent .overlay #svgObject1 {
+		visibility: hidden;
+	}
+
+	.parent .overlay #svgObject2 {
+		visibility: visible;
+	}
+
 	.buttons {
 		margin: 10px 0px 0;
 		position: absolute;
@@ -51,6 +75,9 @@
 		left: 180px;
 	}
 
+	.overline {
+		text-decoration: overline;
+	}
 
 	object {
 		pointer-events:none;
@@ -58,79 +85,23 @@
 </style>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
 <script src="/js/plugins/jquery.panzoom.min.js"></script>
+<script src="/js/plugins/jquery.mousewheel.min.js"></script>
 <script src="c64hw.js"></script>
 </head>
 
 
 <body onload="init_c64()">
 
-<script>
-
-
-function NOT_sigchange(id, checked){
-//	alert ("got id: " + id + " checked: " + checked );
-
-	var svgDoc = svgObject.contentDocument;
-	var styleElement = svgDoc.getElementById(id);
-	if ( typeof styleElement === 'undefined' || styleElement === null) {
-//		console.log(id + ' not defined');
-		styleElement = svgDoc.createElementNS("http://www.w3.org/2000/svg", "style");
-		svgDoc.getElementById("myStyle").appendChild(styleElement);
-	} else {
-//		console.log(id + ' defined');
-//		console.log(id + ' textContent: ' + styleElement.textContent);
-	}
-
-	if ( id.match(/^\.U\d+\w?$/) ) {	// U digits single letter
-		if (checked == true) {
-			var fill = "fill: #F2F;";
-			var opacity = "fill-opacity:0.27;";
-			styleElement.id = id;
-			styleElement.textContent = id + " { " + fill + opacity + "}"; // add whatever you need here
-		} else {
-			var fill = "fill: #F2F;";
-			var opacity = "fill-opacity:0.00;";
-			styleElement.id = id;
-			styleElement.textContent = id + " { " + fill + opacity + "}"; // add whatever you need here
-		}
-	} else {
-		if (checked == -1) {
-			var colour = "stroke: none;";
-			var width = "stroke-width:5;";
-			styleElement.id = id;
-			styleElement.textContent = id + " { " + colour + width + "}"; // add whatever you need here
-		}
-		if (checked == 0) {
-			var colour = "stroke: #282;";
-			var width = "stroke-width:10;";
-			styleElement.id = id;
-			styleElement.textContent = id + " { " + colour + width + "}"; // add whatever you need here
-		}
-		if (checked == 1) {
-			var colour = "stroke: #D55;";
-			var width = "stroke-width:7;";
-			styleElement.id = id;
-			styleElement.textContent = id + " { " + colour + width + "}"; // add whatever you need here
-		}
-	}
-
-	svgDoc.getElementById("myStyle").appendChild(styleElement);
-
-}
-
-</script>
-
     <section id="focal">
 
 	<div class="parent">
 
 		<div class="panzoom">
-<!--
-			<img src="326106-2of2.gif" height="3296" width="4496">
--->
 			<div class="overlay">
-				<object id=svgObject height="3296" width="4496" type="image/svg+xml" data="326106-2of2.svg"></object>    
-
+				<object id=svgObject2 height="3296" width="4496" type="image/svg+xml" data="326106-2of2.svg"></object>    
+			</div>
+			<div class="overlay">
+				<object id=svgObject1 height="3296" width="4496" type="image/svg+xml" data="326106-1of2.svg"></object>    
 			</div>
 		</div>
 	</div>
@@ -140,6 +111,7 @@ function NOT_sigchange(id, checked){
 		<input type="range" class="zoom-range" min="0.1", max="1.0" step="0.1" value="0.1">
 		<button class="zoom-in">Zoom In</button>
 		<button class="reset">Reset</button>
+		<button class="page" id="page" onclick='flip(this.id)'>Page</button>
 	</div>
 
       <script>
@@ -154,7 +126,7 @@ function NOT_sigchange(id, checked){
 //		startTransform: 'scale(0.18)',
 		contain: false,
 		increment: 0.05,
-		minScale: 0.1,
+		minScale: 0.2,
 		maxScale: 1.0,
           });
         })();
@@ -162,20 +134,36 @@ function NOT_sigchange(id, checked){
         (function() {
           var $section = $('#focal');
           var $panzoom = $section.find('.panzoom').panzoom();
+
           $panzoom.parent().on('mousewheel.focal', function( e ) {
-            e.preventDefault();
-            var delta = e.delta || e.originalEvent.wheelDelta;
-            var zoomOut = delta ? delta < 0 : e.originalEvent.deltaY > 0;
-            $panzoom.panzoom('zoom', zoomOut, {
-              increment: 0.1,
-              animate: false,
-              focal: e
-            });
-          });
-        })();
+		e.preventDefault();
+		var delta = e.delta || e.originalEvent.wheelDelta;
+		var zoomOut = delta ? delta < 0 : e.originalEvent.deltaY > 0;
+		$panzoom.panzoom('zoom', zoomOut, {
+			increment: 0.025,
+			animate: false,
+			focal: e
+		});
+	  });
+	})();
 
 
+	var page=2;
+	function flip(id){
+		if (page==2) {
+			page=1;
+			document.getElementById("svgObject1").style.visibility = 'visible';
+			document.getElementById("svgObject2").style.visibility = 'hidden';
+			document.getElementById("page").innerText = "Page " + page;
+		} else {
+			page=2;
+			document.getElementById("svgObject1").style.visibility = 'hidden';
+			document.getElementById("svgObject2").style.visibility = 'visible';
+			document.getElementById("page").innerText = "Page " + page;
+		}
+	}
 
+/*
 		function blah() {
 //			alert ("hi there");
 			var $section = $('#focal');
@@ -183,51 +171,61 @@ function NOT_sigchange(id, checked){
 			$panzoom.panzoom("pan", 0,0);
 			$panzoom.panzoom("zoom", 0.18, { silent: true } );
 		}
-
+*/
       </script>
     </section>
 
 
 <div id="controls">
-Set signals
-<!--
-<br><input type="checkbox" id=".nDMA" onchange='sigchange(this.id, this.checked)'>/DMA
-<br><input type="checkbox" id=".BA" onchange='sigchange(this.id, this.checked)'>BA
+<table>
+<tr><th colspan=10>Set signals:
+<tr><td><input type="checkbox" name="nHIRAM" id=".nHIRAM" checked onchange='set_signal(this.id, this.checked)'><td class="overline">HIRAM
+<tr><td><input type="checkbox" name="nLORAM" id=".nLORAM" checked onchange='set_signal(this.id, this.checked)'><td class="overline">LORAM
+<tr><td><input type="checkbox" name="nCHAREN" id=".nCHAREN" checked onchange='set_signal(this.id, this.checked)'><td class="overline">CHAREN
+<tr><td><input type="checkbox" name="nEXROM" id=".nEXROM" checked onchange='set_signal(this.id, this.checked)'><td class="overline">EXROM
+<tr><td><input type="checkbox" name="nGAME" id=".nGAME" checked onchange='set_signal(this.id, this.checked)'><td class="overline">GAME
+<tr><td><input type="checkbox" name="RW" id=".RW" checked onchange='set_signal(this.id, this.checked)'><td>R/<span class="overline">W</span>
+<tr><td><input type="checkbox" name="BA" id=".BA" checked onchange='set_signal(this.id, this.checked)'><td>BA 
+<tr><td><input type="checkbox" name="nVA14" checked id=".nVA14" onchange='set_signal(this.id, this.checked)'><td class="overline">VA14 
+<tr><td><input type="checkbox" name="nVA15" checked id=".nVA15" onchange='set_signal(this.id, this.checked)'><td class="overline">VA15
+</table>
 
+<hr>
+<div class="tape_controls">
+<table>
+<tr><th colspan=10>Simulation:
+<tr>
+<td> <input type="image" src="icons/tapepause.gif" id="stop" onclick='stop()'>
+<td> <input type="image" src="icons/tapeprev.gif" id="step_down" onclick='step_simulation(-1)'>
+<td> <input type="textbox" size="2" id="master_clock">
+<td> <input type="image" src="icons/tapenext.gif" id="step_up"  onclick='step_simulation(1)'>
+<td> <input type="image" src="icons/tapeplay.gif" id="play" onclick='play()'>
 
-<br><input type="checkbox" id=".nRES" onchange='sigchange(this.id, this.checked)'>/RES 
+<tr><th colspan=10>Speed:
+<tr>
+<td colspan=2> <input type="image" src="icons/down.gif" id="down" onclick='stop()'>
+<td> <input type="textbox" size="2" id="speed">
+<td colspan=2> <input type="image" src="icons/up.gif" id="up" onclick='play()'>
+</table>
+</div>
 
-
-<br><input type="checkbox" id=".nCHAREN" onchange='sigchange(this.id, this.checked)'>nCHAREN
-<br><input type="checkbox" id=".nCHAROM" onchange='sigchange(this.id, this.checked)'>nCHAROM
--->
-
-<br><input type="checkbox" name="nHIRAM" id=".nHIRAM" onchange='set_signal(this.id, this.checked)'>nHIRAM
-<br><input type="checkbox" name="nLORAM" id=".nLORAM" onchange='set_signal(this.id, this.checked)'>nLORAM
-<br><input type="checkbox" name="nCHAREN" id=".nCHAREN" onchange='set_signal(this.id, this.checked)'>nCHAREN
-
-<br><input type="checkbox" name="RW" id=".RW" onchange='set_signal(this.id, this.checked)'>RW
-<br><input type="checkbox" name="nVA14" id=".nVA14" onchange='set_signal(this.id, this.checked)'>/VA14 
-<br><input type="checkbox" name="nVA15" id=".nVA15" onchange='set_signal(this.id, this.checked)'>/VA15
+<hr>
+<div class="addresses">
+<table>
+<tr><td><input type="textbox" size="5" id="CPU_ADDRESS" onchange='set_addr(this.id)'><td> CPU Addr
+<tr><td><input type="textbox" size="5" id="VIC_ADDRESS" onchange='set_addr(this.id)'><td> VIC Addr
+<tr><td><input type="textbox" size="5" id="BUS_ADDRESS" onchange='set_addr(this.id)'><td> BUS Addr
+<tr><td><input type="textbox" size="5" id="DATA"><td> DATA
+</table>
+</div>
 
 <!--
 <br><input type="checkbox" id=".D8" onchange='sigchange(this.id, this.checked)'>D8
 <br><input type="checkbox" id=".D0" onchange='sigchange(this.id, this.checked)'>D0
 <br><input type="checkbox" id=".st0" onchange='sigchange(this.id, this.checked)'>st0
 <br><input type="checkbox" id=".st1" onchange='sigchange(this.id, this.checked)'>st1
-
 <br><input type="checkbox" id=".U19" onchange='sigchange(this.id, this.checked)'>U19
 -->
-
-
-<br><input type="textbox" size="2" id="master_clock">
-<input type="button" id="step" value="step" onclick='step_simulation()'>
-<br>
-<input type="button" id="stop" value="stop" onclick='stop()'>
-<input type="button" id="play" value="play" onclick='play()'>
-<br><input type="textbox" size="5" id="CPU_ADDRESS" onchange='set_addr(this.id)'>CPU Addr
-<br><input type="textbox" size="5" id="VIC_ADDRESS" onchange='set_addr(this.id)'>VIC Addr
-
 
 <!--
 <br><input type="button" id="blah" onclick='blah()'>reset zoom 
