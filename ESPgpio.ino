@@ -58,8 +58,10 @@ ESP8266WebServer server(80);
 char temp_str[80];
 
 // preconfigured list of allowed clients
+// 192.168.0.3 => 0x0a, 0x00, 0x00, 0x03 => 0x0300a8c0
 //
 
+unsigned int allowed_hosts[10] = {0x0300a8c0, 0xcf00a8c0};
 
 String message;
 String substrings[10];
