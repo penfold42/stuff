@@ -20,3 +20,6 @@ This does impose a minimum SPI speed tho
 This is my original ws2801SPI to WS2812 converter.
 It uses store and forward to capture a data update and then retransmit it to the LED strip
 This imposes some lag and if you are too quick with subsequent SPI updates, it may drop characters as the sending process is "blocking".
+
+## tiny2811
+A simple ws2812 led tester based on an attiny13
